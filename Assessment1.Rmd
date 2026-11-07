@@ -1,0 +1,154 @@
+---
+title: "Assessment 1: Project proposal"
+author: "Yuyao Chen"
+date: "2026-11-07"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+   
+---
+
+# Introduction
+
+Electric vehicles are fast growing in popularity in Australia and global automotive market. The current fuel crisis has also had a major impact. This report examines the share of new car sales accounted for by battery-electric vehicles (BEVs) and plug-in hybrid electric vehicles (PHEVs) across selected countries from 2015 to 2025, using data from Our World in Data. The analysis aims to identify differences in electric vehicle adoption between countries over time, so will focus on the following questions:
+- How do the shares of new cars sold as battery-electric and plug-in hybrids vehicles compare across selected countries or regions from 2015 to 2025? 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,fig.align = "center")
+
+# Section 1: Loading libraries
+pacman::p_load(readr,dplyr,ggplot2,tidyverse,knitr,kableExtra,scales,viridis)
+
+# Loading dateset
+#elec_car <- read.csv("https://ourworldindata.org/grapher/share-car-sales-battery-plugin.csv?v=1&csvType=full&useColumnShortNames=true")
+elec_car <- readr::read_csv("Data/share-car-sales-battery-plugin.csv", show_col_types = FALSE)
+
+```
+
+# Data set introduction
+
+This report uses annual shares of new car sales that are battery-electric or plug-in hybrid vehicles from [Our World in Data](https://ourworldindata.org/grapher/share-car-sales-battery-plugin), which originally sourced from International Energy Agency data. The data set contains observations by country or region from 2010 to 2025.
+
+`Entity` identifies the country or region, `Code` is its geographic code, and `Year` is the observation year. `Plug_in_hybrid` is the percentage of new cars sold that are plug-in hybrids, while `Battery_electric` is the corresponding percentage for fully battery-electric vehicles. These values represent shares of new car sales, not the share of all cars on the road.
+
+```{r data-exploration-preparation, echo=FALSE}
+# Describe the variables
+variable_desc <- c("Geographic entity (country or region)",
+                   "Geographic county or regional code",
+                   "Year of observation","Share of new car sold that are plug-in hybrid",
+                   "Share of new car sold that are battery-electric")
+
+# data description
+data_desc <- data.frame(Variable = names(elec_car),Description= variable_desc,
+                        "Variable type"= sapply(elec_car, function(x) class(x)[1]),
+                        Observations = sapply(elec_car, length),
+                        "Missing values" = colSums(is.na(elec_car)),check.names = FALSE)
+
+knitr::kable(data_desc,row.names = FALSE,format="html",
+             caption = "<span style='color:black;font-size:16px;'>Table 1. Structure of the dataset</span>", 
+             escape = FALSE)|>
+  kableExtra::kable_styling(full_width = TRUE, bootstrap_options = "bordered")
+
+# Preparing data for plotting
+selected_entities<- c("World","European Union (27)","China","Australia",
+                      "United Kingdom","United States","Norway","Germany","Japan")
+
+#checking country and region max and mean, using this in data summary
+country_summary <- elec_car|>
+  filter(Entity %in% selected_entities, Year >= 2015, Year <= 2025)|>
+  group_by(Entity)|>
+  summarise(mean_bev_percentage = round(mean(bev_share_car_sales, na.rm = TRUE), 1),
+    max_bev_percentage = round(max(bev_share_car_sales, na.rm = TRUE), 1),
+    mean_phev_percentage = round(mean(phev_share_car_sales, na.rm = TRUE), 1),
+    max_phev_percentage = round(max(phev_share_car_sales, na.rm = TRUE), 1),
+    .groups = "drop")|>
+  arrange(desc(mean_bev_percentage))
+
+# Prepare data for plotting
+plot_data <- elec_car|>
+  filter(Entity %in% selected_entities,Year >= 2015,Year <= 2025)|>
+  select(Entity, Year, bev_share_car_sales,phev_share_car_sales)|>
+  mutate(Entity = factor(Entity, levels = selected_entities))
+
+# top battery-elec country and bev>phev count.
+top <- country_summary|> slice_max(mean_bev_percentage, n = 1, with_ties = FALSE)
+bev_dominant <- sum(plot_data$bev_share_car_sales > plot_data$phev_share_car_sales)
+plot_count <- nrow(plot_data)
+comparison_text <- if (plot_count > 0) {
+  paste0(bev_dominant, " of ", plot_count, " selected countries/regions")} else {"no selected countries/regions"}
+
+```
+
+# Data set description
+
+The full data set contains **`r nrow(elec_car)` observations** and **`r ncol(elec_car)` variables**.
+
+**Figure 1. Screenshot of R code for data description**
+```{r code-screenshot, echo=FALSE, out.width='85%'}
+knitr::include_graphics("Image/description_code.png")
+```
+
+The first two rows of data, with their variable names and data types, are displayed below using `str()`:
+```{r str-display-first-two-rows,echo=FALSE}
+str(head(elec_car, 2))
+```
+
+# Data summary
+
+The following Table 2 summarises maximum value and mean value for ten selected countries and regions over time. For each country or region, it presents the **mean** and **maximum** of both numerical variables; the grouping variable is `Entity`.
+
+```{r summary-table, echo=FALSE}
+country_summary|>
+  head(10)|>
+  knitr::kable(format="html",caption = "<span style='color:black;font-size:16px;'>Table 2. Mean and maximum shares of new car sales in selected countries and regions, 2015–2025</span>",digits = 1,escape = FALSE,align = c("l", "r", "r", "r", "r"))|>
+  kableExtra::kable_styling(full_width = TRUE, bootstrap_options = "bordered")
+```
+
+Among these locations, **`r top$Entity[1]`** has the highest mean battery-electric sales share at `r top$mean_bev_percentage`% between 2015 and 2025. The differences in average battery-electric and plug-in hybrid car sales shares across the selected countries and regions indicate varying pattern of vehicle adoption.
+
+# Visualisations
+To examine differences in electric vehicle adoption, Figure 2 illustrates the trends in battery-electric and plug-in hybrid vehicle sales shares across nine selected countries and regions from 2015 to 2025.
+
+**Figure 2. Battery-electric and plug-in hybrid new car sales shares across nine selected countries and regions, 2015–2025**
+```{r line-chart, fig.width=12, fig.height=10, echo=FALSE}
+# Plot two lines for nine entities
+ggplot(plot_data, aes(x = Year))+
+  geom_line(aes(y = bev_share_car_sales,colour = "Battery-electric"),linewidth = 0.9)+
+  geom_point(aes(y = bev_share_car_sales,colour = "Battery-electric"),size = 1.5)+
+  geom_line(aes(y = phev_share_car_sales,colour = "Plug-in hybrid"),linewidth = 0.9)+
+  geom_point(aes(y = phev_share_car_sales,colour = "Plug-in hybrid"),size = 1.5)+
+  facet_wrap(~ Entity, ncol = 3)+
+  scale_colour_manual(values = c("Battery-electric" = "skyblue",
+                                 "Plug-in hybrid" = "darkred"))+
+  scale_x_continuous(breaks = c(2015, 2020, 2025))+
+  labs(x = "Year",y = "Share of new car sales (%)",colour = NULL)+
+  theme_minimal(base_size=15)+
+  theme(axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 15, face = "bold"),
+        legend.text = element_text(size = 14),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+- *Battery-electric vehicle sales shares increased substantially between 2015 and 2025 across most selected countries and regions, with Norway showing the strongest growth, reaching approximately 95% in 2025, followed by China at around 32%.*
+- *Battery-electric vehicles generally had higher sales shares than plug-in hybrids, particularly in recent years, while Japan and the United States showed relatively low adoption rates compared with Norway and China.*
+
+# Conclusion
+
+The analysis finds substantial differences in the mix of electric car sales across the nine selected countries and regions between 2015 and 2025. **Battery-electric** vehicle sales shares increased across most markets and generally exceeded plug-in hybrid shares, particularly in recent years. **`r top$Entity[1]`** demonstrated the highest level of adoption, with battery-electric vehicles accounting for approximately 95% of new car sales in 2025, followed by strong growth in China. In contrast, Japan and the United States showed relatively low electric vehicle sales shares. Plug-in hybrid adoption remained comparatively modest across most markets, with Norway showing a declining trend in recent years.
+
+Overall, the findings suggest that electric vehicle adoption has grown globally, but the pace of growth varies considerably across markets. These differences highlight the uneven transition towards electric mobility and the increasing dominance of battery-electric vehicles over plug-in hybrids.
+
+# Reference {-}
+
+Our world in data. (2025). Share of new cars sold that are battery-electric and plug-in hybrid. https://ourworldindata.org/grapher/share-car-sales-battery-plugin.
+
+RACV. (2026, June 12). Hybrid vs plug-in hybrid vs mild hybrid vs electric vehicle: what’s the difference? https://www.racv.com.au/royalauto/transport/electric-vehicles/hybrid-vs-phev-vs-ev-difference.html.
+
+Wickham, H. & Grolemund, G. (2017). R for Data Science. Chapter 27: R Markdown. https://r4ds.had.co.nz/r-markdown.html.
