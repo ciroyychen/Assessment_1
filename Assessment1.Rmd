@@ -139,6 +139,45 @@ ggplot(plot_data, aes(x = Year))+
 - *Battery-electric vehicle sales shares increased substantially between 2015 and 2025 across most selected countries and regions, with Norway showing the strongest growth, reaching approximately 95% in 2025, followed by China at around 32%.*
 - *Battery-electric vehicles generally had higher sales shares than plug-in hybrids, particularly in recent years, while Japan and the United States showed relatively low adoption rates compared with Norway and China.*
 
+Figure 3 compares the new car sales with battery-electric and plug-in hybrid vehicle types across nine selected countries and regions in 2025. The bar chart highlights differences in their adoption patterns across markets.
+
+**Figure 3. Share of new cars sold with battery-electric and plug-in hybrid vehicles in 2025**
+
+```{r bar-chart, echo=FALSE, fig.width=12, fig.height=10}
+# Adding an additional figure
+bar_data <- plot_data|>
+  filter(Year == 2025)|>
+  select(Entity, bev_share_car_sales,phev_share_car_sales)|>
+  mutate(total_share = bev_share_car_sales+phev_share_car_sales)|>
+  pivot_longer(cols = c(bev_share_car_sales,phev_share_car_sales),
+    names_to = "vehicle_type",values_to = "sales_share")|>
+  mutate(Entity = reorder(Entity, total_share),
+         vehicle_type = factor(vehicle_type,levels = c("bev_share_car_sales","phev_share_car_sales"),
+                               labels = c("Battery-electric","Plug-in hybrid")))
+
+# Create total labels
+label_data <- bar_data|>
+  group_by(Entity)|>
+  summarise(total_share = sum(sales_share, na.rm = TRUE))
+
+# Stacked bar chart
+ggplot(bar_data, aes(x = Entity, y = sales_share, fill = vehicle_type))+
+  geom_col(width = 0.7)+
+  geom_text(data = label_data,aes(x = Entity, y = total_share, label = sprintf("%.1f%%", total_share)),
+            hjust = -0.15,size = 5,inherit.aes = FALSE)+
+  coord_flip()+
+  scale_fill_manual(values = c("Battery-electric" = "skyblue","Plug-in hybrid" = "navy"))+
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12)))+
+  labs(x = NULL,y = "Share of new car sales (%)",fill = NULL)+
+  theme_minimal(base_size = 16) +
+  theme(axis.text.y = element_text(size = 14,colour="black"),axis.text.x = element_text(size = 13),
+        axis.title.y = element_text(size = 15),axis.title.x = element_text(size = 15),
+        legend.text = element_text(size = 14),legend.position = "bottom",
+        panel.grid.major.y = element_blank(),panel.grid.minor = element_blank())
+```
+
+As shown in Figure 3, Norway recorded the highest combined electric vehicle sales share 97%, dominated by battery-electric vehicles, while China also showed substantial adoption. In contrast, Japan, Australia and the United States had relatively low combined electric vehicle sales shares, highlighting significant differences in adoption across markets.
+
 # Conclusion
 
 The analysis finds substantial differences in the mix of electric car sales across the nine selected countries and regions between 2015 and 2025. **Battery-electric** vehicle sales shares increased across most markets and generally exceeded plug-in hybrid shares, particularly in recent years. **`r top$Entity[1]`** demonstrated the highest level of adoption, with battery-electric vehicles accounting for approximately 95% of new car sales in 2025, followed by strong growth in China. In contrast, Japan and the United States showed relatively low electric vehicle sales shares. Plug-in hybrid adoption remained comparatively modest across most markets, with Norway showing a declining trend in recent years.
