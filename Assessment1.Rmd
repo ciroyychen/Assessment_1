@@ -176,7 +176,7 @@ ggplot(bar_data, aes(x = Entity, y = sales_share, fill = vehicle_type))+
         panel.grid.major.y = element_blank(),panel.grid.minor = element_blank())
 ```
 
-As shown in Figure 3, Norway recorded the highest combined electric vehicle sales share 97%, dominated by battery-electric vehicles, while China also showed substantial adoption. In contrast, Japan, Australia and the United States had relatively low combined electric vehicle sales shares, highlighting significant differences in adoption across markets.
+As shown in Figure 3, Norway recorded the highest combined electric vehicle sales share at 97%, predominantly driven by battery-electric vehicles, while China also showed substantial adoption. In contrast, Japan, Australia and the United States recorded relatively lower electric vehicle sales shares, highlighting significant differences in adoption and vehicle preferences across the selected countries and regions.
 
 # Conclusion
 
