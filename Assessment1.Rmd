@@ -73,12 +73,8 @@ plot_data <- elec_car|>
   select(Entity, Year, bev_share_car_sales,phev_share_car_sales)|>
   mutate(Entity = factor(Entity, levels = selected_entities))
 
-# top battery-elec country and bev>phev count.
+# top battery-elec country 
 top <- country_summary|> slice_max(mean_bev_percentage, n = 1, with_ties = FALSE)
-bev_dominant <- sum(plot_data$bev_share_car_sales > plot_data$phev_share_car_sales)
-plot_count <- nrow(plot_data)
-comparison_text <- if (plot_count > 0) {
-  paste0(bev_dominant, " of ", plot_count, " selected countries/regions")} else {"no selected countries/regions"}
 
 ```
 
@@ -108,6 +104,22 @@ country_summary|>
 ```
 
 Among these locations, **`r top$Entity[1]`** has the highest mean battery-electric sales share at `r top$mean_bev_percentage`% between 2015 and 2025. The differences in average battery-electric and plug-in hybrid car sales shares across the selected countries and regions indicate varying pattern of vehicle adoption.
+
+```{r additional-table, echo=FALSE}
+# Adding an additional table
+bev_change <- plot_data|>
+  filter(Year %in% c(2015, 2025))|>
+  select(Entity, Year, bev_share_car_sales)|>
+  pivot_wider(names_from = Year,values_from = bev_share_car_sales,names_prefix = "BEV_")|>
+  mutate(Change = BEV_2025 - BEV_2015)|>
+  arrange(desc(Change))
+
+knitr::kable(bev_change,format = "html",digits = 1,escape = FALSE,
+             col.names = c("Country/Region","2015 (%)","2025 (%)","Change (%)"),
+             caption = "<span style='color:black;font-size:16px;'>Table 3. Change in battery-electric sales share</span>",
+             align = c("l", "r", "r", "r"))|>
+  kableExtra::kable_styling(full_width = TRUE,bootstrap_options = "bordered")
+```
 
 # Visualisations
 To examine differences in electric vehicle adoption, Figure 2 illustrates the trends in battery-electric and plug-in hybrid vehicle sales shares across nine selected countries and regions from 2015 to 2025.
