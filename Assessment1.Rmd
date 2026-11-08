@@ -105,6 +105,8 @@ country_summary|>
 
 Among these locations, **`r top$Entity[1]`** has the highest mean battery-electric sales share at `r top$mean_bev_percentage`% between 2015 and 2025. The differences in average battery-electric and plug-in hybrid car sales shares across the selected countries and regions indicate varying pattern of vehicle adoption.
 
+Table 3 compares battery-electric vehicle sales shares in 2015 and 2025 across the nine selected geographical entities. 
+
 ```{r additional-table, echo=FALSE}
 # Adding an additional table
 bev_change <- plot_data|>
@@ -120,6 +122,8 @@ knitr::kable(bev_change,format = "html",digits = 1,escape = FALSE,
              align = c("l", "r", "r", "r"))|>
   kableExtra::kable_styling(full_width = TRUE,bootstrap_options = "bordered")
 ```
+
+As shown in Table 3, battery-electric vehicle sales shares increased across all nine selected countries and regions from 2015 to 2025. Norway recorded the largest increase of 78.6%, followed by China (31.9%), while Japan experienced the smallest increase (1.6%), highlighting substantial differences in the pace of electric vehicle adoption across markets.
 
 # Visualisations
 To examine differences in electric vehicle adoption, Figure 2 illustrates the trends in battery-electric and plug-in hybrid vehicle sales shares across nine selected countries and regions from 2015 to 2025.
